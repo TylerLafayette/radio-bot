@@ -2,6 +2,11 @@ import { Client, Message } from "discord.js";
 import { ChannelTypes } from "discord.js/typings/enums";
 import { IConfig } from "../config";
 import { collectionToArray, throwErr } from "../util";
+import {
+	EPermission,
+	EPermissionLevel,
+	requirePermission,
+} from "./permissions";
 
 /**
  * TCommand represents a function for processing a single command.
@@ -20,6 +25,10 @@ export const hello: TCommand =
 export const attachToVoiceChannel: TCommand =
 	(config: IConfig, client: Client) =>
 	async (msg: Message, args: string[]): Promise<void> => {
+		requirePermission(EPermission.ModifyServerConfiguration)(
+			EPermissionLevel.Admin
+		);
+
 		const name = args.join(" ");
 		const channels = msg?.guild?.channels.cache.filter(
 			(c) => c.name == name && c.type == "GUILD_VOICE"
