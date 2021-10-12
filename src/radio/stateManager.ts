@@ -5,7 +5,7 @@ export interface IStateManager<T> {
 	setState: (value: T) => Promise<void>;
 }
 
-const newStateManager = <T>(initialValue: T): IStateManager<T> => {
+export const newStateManager = <T>(initialValue: T): IStateManager<T> => {
 	let _value: T = initialValue;
 	let _mutex: Mutex = new Mutex();
 
