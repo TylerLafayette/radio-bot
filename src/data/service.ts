@@ -71,7 +71,7 @@ const mapServerVcChannel = (result: any): IServerVcChannel => ({
 	updatedBy: result.updated_by,
 	serverId: result.server_id,
 	guildId: result.guild_id,
-	channelId: result.channelId,
+	channelId: result.channel_id,
 });
 
 /**

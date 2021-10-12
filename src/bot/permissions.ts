@@ -14,7 +14,7 @@ export enum EPermissionLevel {
 
 export enum EPermission {
 	BasicCommands = 1,
-	ModifyAudioSettings = 2,
+	ModCommands = 2,
 	ModifyServerConfiguration = 3,
 }
 
