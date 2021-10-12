@@ -1,3 +1,7 @@
+import { Message } from "discord.js";
+import { IBot } from ".";
+import { service } from "../data";
+import { IServerPermissionRole } from "../data/servers";
 import { throwErr } from "../util";
 
 export enum EPermissionLevel {
@@ -29,3 +33,29 @@ export const requirePermission =
 	(permission: EPermission) => (level: EPermissionLevel) =>
 		levelHasPermission(permission)(level) ||
 		throwErr("you do not have permission to use this command");
+
+export const derivePermissionFromMessage = async (
+	bot: IBot,
+	msg: Message
+): Promise<EPermissionLevel> => {
+	if (msg.author.id == msg.guild?.ownerId) return EPermissionLevel.Owner;
+
+	if (!msg.guildId) return EPermissionLevel.User;
+
+	const serverRoles = await service.getServerPermissionRolesByGuildId(bot.db)(
+		msg.guildId
+	);
+
+	if (serverRoles.length < 1) return EPermissionLevel.User;
+
+	return Math.max(
+		EPermissionLevel.User,
+		...serverRoles
+			.filter(
+				(sr: IServerPermissionRole) =>
+					msg.member?.roles.cache.filter((r) => sr.roleId == r.id).size ||
+					-1 > 0
+			)
+			.map((sr) => sr.permissionLevel as number)
+	);
+};

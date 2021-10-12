@@ -8,6 +8,7 @@ import { throwErr, withDefault } from "../util";
 export interface IConfig {
 	botToken: string;
 	prefix: string;
+	dbFilename: string;
 }
 
 /**
@@ -29,5 +30,6 @@ export const getConfig = async (): Promise<IConfig> => {
 	return {
 		botToken: getEnv("RADIO_BOT_TOKEN"),
 		prefix: getEnvOrDefault("RADIO_BOT_PREFIX", "//"),
+		dbFilename: getEnvOrDefault("RADIO_BOT_DB_FILENAME", "data.sql"),
 	};
 };

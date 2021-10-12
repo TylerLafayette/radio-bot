@@ -130,3 +130,6 @@ dist
 
 # Environment variables
 .env
+
+# SQLite
+data.sql

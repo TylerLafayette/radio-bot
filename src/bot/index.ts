@@ -1,7 +1,18 @@
-import { Client, Intents, Message } from "discord.js";
+import { Client, Guild, Intents, Message } from "discord.js";
 
 import { IConfig } from "../config";
+import { IDbConnection, service } from "../data";
 import * as commands from "./commands";
+import { errorEmbed } from "./fmt";
+
+/**
+ * Contains all the dependencies of the bot.
+ */
+export interface IBot {
+	config: IConfig;
+	client: Client;
+	db: IDbConnection;
+}
 
 /**
  * Creates an event handler on a Discord.js Client that automatically
@@ -35,40 +46,66 @@ const login = (token: string): Promise<Client> =>
 		client.login(token);
 	});
 
-export const handleMessage =
-	(config: IConfig, client: Client) => async (msg: Message) => {
-		const { content } = msg;
+/**
+ * Checks that the server is registered in the database and inserts it if not.
+ */
+export const checkServer = (bot: IBot) => async (guild: Guild) => {
+	const { db } = bot;
 
-		// If the message doesn't start with the prefix, ignore it.
-		if (!content.startsWith(config.prefix)) return;
+	try {
+		await service.getServerByGuildId(bot.db)(guild.id);
+	} catch (_) {
+		await service.insertServer(bot.db)({
+			guildId: guild.id,
+			joinedAt: new Date(),
+		});
+	}
+};
 
-		// Strip the prefix from the command.
-		const withoutPrefix = content.substr(config.prefix.length);
+export const handleMessage = (bot: IBot) => async (msg: Message) => {
+	const { config, client, db } = bot;
+	const { content } = msg;
 
-		// Split the message by spaces and use the first
-		// word as the command.
-		const [command, ...args] = withoutPrefix.split(" ");
+	// If the message doesn't start with the prefix, ignore it.
+	if (!content.startsWith(config.prefix)) return;
 
-		if (!(commands as any)[command]) return;
+	// TODO: do this more efficiently
+	// Check that the server is registered in the database.
+	if (msg.guild) checkServer(bot)(msg.guild);
 
-		// Call the command.
-		try {
-			await (commands as any)[command](config, client)(msg, args);
-		} catch (err) {
-			msg.reply(`Error occurred: \`\`\`${err}\`\`\``);
-		}
-	};
+	// Strip the prefix from the command.
+	const withoutPrefix = content.substr(config.prefix.length);
+
+	// Split the message by spaces and use the first
+	// word as the command.
+	const [command, ...args] = withoutPrefix.split(" ");
+
+	if (!(commands as any)[command]) return;
+
+	// Call the command.
+	try {
+		await (commands as any)[command](bot)(msg, args);
+	} catch (err) {
+		msg.reply({ embeds: [errorEmbed(err)] });
+	}
+};
 
 /**
  * Runs the bot using the provided `config`.
  */
-export const run = async (config: IConfig): Promise<void> => {
+export const run = async (
+	config: IConfig,
+	db: IDbConnection
+): Promise<void> => {
 	const client = await login(config.botToken);
+
+	const bot: IBot = { config, client, db };
 
 	// Shut down the bot on program exit.
 	process.on("beforeExit", () => client.destroy());
 
-	client.on("messageCreate", handleMessage(config, client));
+	client.on("messageCreate", handleMessage(bot));
+	client.on("guildCreate", checkServer(bot));
 
 	console.log(`✅ Logged in as ${client.user?.username}`);
 };
