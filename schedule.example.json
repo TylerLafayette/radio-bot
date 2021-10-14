@@ -1,7 +1,12 @@
 {
   "playlist": [
     {
-    
+      "startTime": "18:00",
+      "song": "http://<someurl>.com/song.mp3"
+    },
+    {
+      "startTime": "20:00",
+      "song": "http://<someurl>.com/song2.mp3"
     }
   ]
 }

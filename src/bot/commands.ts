@@ -5,6 +5,7 @@ import {
   createAudioPlayer,
   createAudioResource,
   NoSubscriberBehavior,
+  StreamType,
 } from "@discordjs/voice";
 import { ChannelTypes } from "discord.js/typings/enums";
 import { IBot } from ".";
@@ -12,12 +13,16 @@ import { IConfig } from "../config";
 import { service } from "../data";
 import { collectionToArray, throwErr } from "../util";
 import { genericMessage } from "./fmt";
+import got from "got";
 import {
   derivePermissionFromMessage as derivePermission,
   EPermission,
   EPermissionLevel,
   requirePermission,
 } from "./permissions";
+import { PassThrough } from "stream";
+import { subscribe, setSong as setStreamSong } from "../radio";
+import { stdout } from "process";
 
 /**
  * TCommand represents a function for processing a single command.
@@ -195,7 +200,10 @@ export const joinVc: TCommand =
       },
     });
 
-    const resource = createAudioResource("test.mp3");
+    const stream = new PassThrough();
+    await subscribe(stream)(bot.streamManager);
+
+    const resource = createAudioResource(stream);
     player.play(resource);
     connection.subscribe(player);
 
@@ -225,5 +233,20 @@ export const leaveVc: TCommand =
       embeds: [
         genericMessage("Goodbye!", `Successfully left the voice channel`),
       ],
+    });
+  };
+
+export const setSong: TCommand =
+  (bot: IBot) =>
+  async (msg: Message, args: string[]): Promise<void> => {
+    requirePermission(EPermission.ModCommands)(
+      await derivePermission(bot, msg)
+    );
+
+    const song = args.join(" ");
+    await setStreamSong(song)(bot.streamManager);
+
+    msg.reply({
+      embeds: [genericMessage("Success!", `Playing ${song}.`)],
     });
   };
