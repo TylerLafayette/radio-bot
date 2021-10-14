@@ -30,7 +30,7 @@ export const getFromPool =
  */
 const _putInPool =
 	<K extends string | number | symbol, V>(key: K, value: V) =>
-	async (pool: TPool<K, V>): Promise<TPool<K, V>> => ({
+	async (pool: Record<K, V>): Promise<Record<K, V>> => ({
 		...pool,
 		[key]: value,
 	});

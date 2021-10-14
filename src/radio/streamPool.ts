@@ -16,7 +16,9 @@ export const newStreamPool: () => TStreamPool = newPool;
 /**
  * Gets a stream by `serverId` and returns `null` if nothing is found.
  */
-export const getStream = getFromPool;
+export const getStream: (
+	key: string
+) => (pool: TStreamPool) => Promise<TStreamManager> = getFromPool;
 
 /**
  * Puts a stream into the pool by `serverId`.

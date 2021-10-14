@@ -7,7 +7,7 @@ import {
   TStreamManager,
 } from "../radio";
 import { transformStateAsync } from "../radio/stateManager";
-import { getStream, putStream } from "../radio/streamPool";
+import { getStream, putStream } from "../radio";
 
 const createAndReturnStream =
   (bot: IBot) =>
