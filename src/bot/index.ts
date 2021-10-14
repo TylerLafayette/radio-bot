@@ -2,8 +2,7 @@ import { Client, Guild, Intents, Message } from "discord.js";
 
 import { IConfig } from "../config";
 import { IDbConnection, service } from "../data";
-import { TStreamManager } from "../radio";
-import { TStreamPool } from "../radio/streamPool";
+import { TSinkPool, TStreamPool } from "../radio";
 import * as commands from "./commands";
 import { errorEmbed } from "./fmt";
 
@@ -15,6 +14,7 @@ export interface IBot {
 	client: Client;
 	db: IDbConnection;
 	streamPool: TStreamPool;
+	sinkPool: TSinkPool;
 }
 
 /**
@@ -54,8 +54,6 @@ const login = (token: string): Promise<Client> =>
  * Checks that the server is registered in the database and inserts it if not.
  */
 export const checkServer = (bot: IBot) => async (guild: Guild) => {
-	const { db } = bot;
-
 	try {
 		await service.getServerByGuildId(bot.db)(guild.id);
 	} catch (_) {
@@ -67,7 +65,7 @@ export const checkServer = (bot: IBot) => async (guild: Guild) => {
 };
 
 export const handleMessage = (bot: IBot) => async (msg: Message) => {
-	const { config, client, db } = bot;
+	const { config } = bot;
 	const { content } = msg;
 
 	// If the message doesn't start with the prefix, ignore it.
@@ -100,11 +98,12 @@ export const handleMessage = (bot: IBot) => async (msg: Message) => {
 export const run = async (
 	config: IConfig,
 	db: IDbConnection,
-	streamPool: TStreamPool
+	streamPool: TStreamPool,
+	sinkPool: TSinkPool
 ): Promise<void> => {
 	const client = await login(config.botToken);
 
-	const bot: IBot = { config, client, db, streamPool };
+	const bot: IBot = { config, client, db, streamPool, sinkPool };
 
 	// Shut down the bot on program exit.
 	process.on("beforeExit", () => client.destroy());

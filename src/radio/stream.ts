@@ -51,7 +51,9 @@ const streamLoop = async (sm: TStreamManager): Promise<void> => {
 	if (s.stream !== null) {
 		const bytes = s.stream.read(s.bitrate / (8 * 4));
 
-		(await sm.getState()).subscriptions.forEach((sink) => sink.write(bytes));
+		(await sm.getState()).subscriptions
+			.filter(({ writable }) => writable) // Filter out closed or destroyed streams.
+			.forEach((sink) => sink.write(bytes)); // Push bytes to each stream.
 	}
 
 	await new Promise((resolve) => setTimeout(resolve, 250));

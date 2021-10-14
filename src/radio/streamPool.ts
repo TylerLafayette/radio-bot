@@ -1,9 +1,4 @@
 import { getFromPool, newPool, putInPool, TPool } from "./pool";
-import {
-	IStateManager,
-	newStateManager,
-	transformStateAsync,
-} from "./stateManager";
 import { TStreamManager } from "./stream";
 
 export type TStreamPool = TPool<string, TStreamManager>;

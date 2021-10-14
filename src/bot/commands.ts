@@ -21,7 +21,7 @@ import {
   requirePermission,
 } from "./permissions";
 import { PassThrough } from "stream";
-import { subscribe, setSong as setStreamSong } from "../radio";
+import { subscribe, getSink, putSink } from "../radio";
 import { stdout } from "process";
 import { getServerStream } from "./streams";
 
@@ -50,7 +50,7 @@ export const setVc: TCommand =
     const channels = msg?.guild?.channels.cache.filter(
       (c) => c.name == name && c.type == "GUILD_VOICE"
     );
-    let [vcId, vc] =
+    let [vcId] =
       (channels && collectionToArray(channels)[0]) ||
       throwErr(
         `voice channel ${name} not found in guild ${
@@ -206,8 +206,12 @@ export const joinVc: TCommand =
 
     const streamManager = await getServerStream(bot)(server.id);
 
-    const stream = new PassThrough();
-    await subscribe(stream)(streamManager);
+    let stream = await getSink(server.id)(bot.sinkPool);
+    if (stream == null || stream.destroyed) {
+      stream = new PassThrough();
+      await subscribe(stream)(streamManager);
+      await putSink(server.id, stream)(bot.sinkPool);
+    }
 
     const resource = createAudioResource(stream);
     player.play(resource);
@@ -232,8 +236,15 @@ export const leaveVc: TCommand =
 
     if (!msg.guildId || !msg.guild) return throwErr(`guild not found`);
     const connection = getVoiceConnection(msg.guild.id);
+    const server = await service.getServerByGuildId(bot.db)(msg.guildId);
 
-    connection && (await connection.destroy());
+    connection && connection.destroy();
+
+    let stream = await getSink(server.id)(bot.sinkPool);
+    if (stream != null) {
+      stream.destroy();
+      await putSink(server.id, null)(bot.sinkPool);
+    }
 
     msg.reply({
       embeds: [
