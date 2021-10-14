@@ -1,3 +1,4 @@
+import { getFromPool, newPool, putInPool, TPool } from "./pool";
 import {
 	IStateManager,
 	newStateManager,
@@ -5,36 +6,19 @@ import {
 } from "./stateManager";
 import { TStreamManager } from "./stream";
 
-type TStreamMap = {
-	[key: string]: TStreamManager;
-};
-
-export type TStreamPool = IStateManager<TStreamMap>;
+export type TStreamPool = TPool<string, TStreamManager>;
 
 /**
  * Creates and returns a new `TStreamPool`.
  */
-export const newStreamPool = (): TStreamPool => newStateManager({});
+export const newStreamPool: () => TStreamPool = newPool;
 
 /**
  * Gets a stream by `serverId` and returns `null` if nothing is found.
  */
-export const getStream =
-	(serverId: string) =>
-	async (pool: TStreamPool): Promise<TStreamManager | null> =>
-		(await pool.getState())[serverId] || null;
+export const getStream = getFromPool;
 
 /**
  * Puts a stream into the pool by `serverId`.
  */
-const _putStream =
-	(serverId: string, sm: TStreamManager) =>
-	async (map: TStreamMap): Promise<TStreamMap> => ({
-		...map,
-		[serverId]: sm,
-	});
-/**
- * Puts a stream into the pool by `serverId`.
- */
-export const putStream = (serverId: string, sm: TStreamManager) =>
-	transformStateAsync(_putStream(serverId, sm));
+export const putStream = putInPool;

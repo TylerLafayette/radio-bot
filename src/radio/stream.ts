@@ -48,14 +48,11 @@ const streamLoop = async (sm: TStreamManager): Promise<void> => {
 		await setSong(song.name)(sm);
 	}
 
-	if (s.stream === null) {
-		await new Promise((resolve) => setTimeout(resolve, 250));
-		return streamLoop(sm);
+	if (s.stream !== null) {
+		const bytes = s.stream.read(s.bitrate / (8 * 4));
+
+		(await sm.getState()).subscriptions.forEach((sink) => sink.write(bytes));
 	}
-
-	const bytes = s.stream.read(s.bitrate / (8 * 4));
-
-	(await sm.getState()).subscriptions.forEach((sink) => sink.write(bytes));
 
 	await new Promise((resolve) => setTimeout(resolve, 250));
 	streamLoop(sm);
