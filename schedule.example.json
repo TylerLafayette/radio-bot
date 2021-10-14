@@ -1,5 +1,5 @@
 {
-  "playlist": [
+  "schedule": [
     {
       "startTime": "18:00",
       "song": "http://<someurl>.com/song.mp3"

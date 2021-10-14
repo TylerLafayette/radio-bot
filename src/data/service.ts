@@ -9,6 +9,8 @@ import {
 	ServerVcChannelsTable,
 	IServerPermissionRole,
 	ServerPermissionRolesTable,
+	ServerPlaylistsTable,
+	IServerPlaylist,
 } from "./servers";
 import { throwErr } from "../util";
 
@@ -280,4 +282,115 @@ export const getServerPermissionRoleByGuildIdAndRoleId =
 				guildId,
 				roleId
 			)) || throwErr("could not find IServerPermissionRoles")
+		);
+
+/**
+ * Inserts a new IServerPlaylist into the database, returning the ID on success.
+ */
+export const insertServerPlaylist =
+	({ conn }: IDbConnection) =>
+	async ({
+		updatedAt = new Date(),
+		updatedBy,
+		serverId,
+		guildId,
+		playlist,
+	}: {
+		updatedAt?: Date;
+		updatedBy: string;
+		serverId: string;
+		guildId: string;
+		playlist: string;
+	}): Promise<string> => {
+		const id = uuid();
+		await conn.run(
+			`INSERT INTO ${ServerPlaylistsTable} VALUES (?, ?, ?, ?, ?, ?)`,
+			id,
+			updatedAt,
+			updatedBy,
+			serverId,
+			guildId,
+			playlist
+		);
+
+		return id;
+	};
+
+/**
+ * Updates an IServerPlaylist in the database.
+ */
+export const updateServerPlaylist =
+	({ conn }: IDbConnection) =>
+	async ({
+		id,
+		updatedAt = new Date(),
+		updatedBy,
+		serverId,
+		guildId,
+		playlist,
+	}: {
+		id: string;
+		updatedAt?: Date;
+		updatedBy: string;
+		serverId: string;
+		guildId: string;
+		playlist: string;
+	}): Promise<void> => {
+		await conn.run(
+			`UPDATE ${ServerPlaylistsTable} SET updated_at = ?, updated_by = ?, server_id = ?, guild_id = ?, playlist = ? WHERE id= ?`,
+			updatedAt,
+			updatedBy,
+			serverId,
+			guildId,
+			playlist,
+			id
+		);
+	};
+
+const mapServerPlaylist = (result: any): IServerPlaylist => ({
+	id: result.id,
+	updatedAt: result.updated_at,
+	updatedBy: result.updated_by,
+	serverId: result.server_id,
+	guildId: result.guild_id,
+	playlist: result.playlist,
+});
+
+/**
+ * Fetches a single IServerPlaylist from the database by ID.
+ */
+export const getServerPlaylistById =
+	({ conn }: IDbConnection) =>
+	async (id: string): Promise<IServerPlaylist> =>
+		mapServerPlaylist(
+			(await conn.get(
+				`SELECT * FROM ${ServerPlaylistsTable} WHERE id = ?`,
+				id
+			)) || throwErr("could not find IServerPlaylist")
+		);
+
+/**
+ * Fetches a single IServerPlaylist from the database by server ID.
+ */
+export const getServerPlaylistByServerId =
+	({ conn }: IDbConnection) =>
+	async (id: string): Promise<IServerPlaylist> =>
+		mapServerPlaylist(
+			(await conn.get(
+				`SELECT * FROM ${ServerPlaylistsTable} WHERE server_id = ?`,
+				id
+			)) || throwErr("could not find IServerPlaylist")
+		);
+
+/**
+ * Fetches a single IServerPlaylist from the database by Discord guild ID.
+ */
+export const getServerPlaylistByGuildId =
+	({ conn }: IDbConnection) =>
+	async (id: string): Promise<IServerPlaylist> =>
+		mapServerPlaylist(
+			(await conn.get(
+				`SELECT * FROM ${ServerPlaylistsTable} WHERE guild_id = ?`,
+				id
+			)) || throwErr("could not find IServerPlaylist")
 		);

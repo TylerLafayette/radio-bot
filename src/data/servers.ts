@@ -40,3 +40,17 @@ export interface IServerPermissionRole {
 	roleId: string;
 	permissionLevel: EPermissionLevel;
 }
+
+export const ServerPlaylistsTable = "server_playlists";
+
+/**
+ * Represents a saved playlist for a server.
+ */
+export interface IServerPlaylist {
+	id: string;
+	updatedAt: Date;
+	updatedBy: string;
+	serverId: string;
+	guildId: string;
+	playlist: string;
+}

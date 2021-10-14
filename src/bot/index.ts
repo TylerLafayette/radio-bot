@@ -3,6 +3,7 @@ import { Client, Guild, Intents, Message } from "discord.js";
 import { IConfig } from "../config";
 import { IDbConnection, service } from "../data";
 import { TStreamManager } from "../radio";
+import { TStreamPool } from "../radio/streamPool";
 import * as commands from "./commands";
 import { errorEmbed } from "./fmt";
 
@@ -13,7 +14,7 @@ export interface IBot {
 	config: IConfig;
 	client: Client;
 	db: IDbConnection;
-	streamManager: TStreamManager;
+	streamPool: TStreamPool;
 }
 
 /**
@@ -99,11 +100,11 @@ export const handleMessage = (bot: IBot) => async (msg: Message) => {
 export const run = async (
 	config: IConfig,
 	db: IDbConnection,
-	streamManager: TStreamManager
+	streamPool: TStreamPool
 ): Promise<void> => {
 	const client = await login(config.botToken);
 
-	const bot: IBot = { config, client, db, streamManager };
+	const bot: IBot = { config, client, db, streamPool };
 
 	// Shut down the bot on program exit.
 	process.on("beforeExit", () => client.destroy());

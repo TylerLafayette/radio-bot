@@ -11,7 +11,7 @@ import { ChannelTypes } from "discord.js/typings/enums";
 import { IBot } from ".";
 import { IConfig } from "../config";
 import { service } from "../data";
-import { collectionToArray, throwErr } from "../util";
+import { collectionToArray, getJson, throwErr } from "../util";
 import { genericMessage } from "./fmt";
 import got from "got";
 import {
@@ -23,6 +23,7 @@ import {
 import { PassThrough } from "stream";
 import { subscribe, setSong as setStreamSong } from "../radio";
 import { stdout } from "process";
+import { getServerStream } from "./streams";
 
 /**
  * TCommand represents a function for processing a single command.
@@ -200,8 +201,13 @@ export const joinVc: TCommand =
       },
     });
 
+    if (!msg.guildId) return throwErr("issue");
+    const server = await service.getServerByGuildId(bot.db)(msg.guildId);
+
+    const streamManager = await getServerStream(bot)(server.id);
+
     const stream = new PassThrough();
-    await subscribe(stream)(bot.streamManager);
+    await subscribe(stream)(streamManager);
 
     const resource = createAudioResource(stream);
     player.play(resource);
@@ -236,17 +242,84 @@ export const leaveVc: TCommand =
     });
   };
 
-export const setSong: TCommand =
+// export const setSong: TCommand =
+//   (bot: IBot) =>
+//   async (msg: Message, args: string[]): Promise<void> => {
+//     requirePermission(EPermission.ModCommands)(
+//       await derivePermission(bot, msg)
+//     );
+//
+//     const song = args.join(" ");
+//     await setStreamSong(song)(bot.streamManager);
+//
+//     msg.reply({
+//       embeds: [genericMessage("Success!", `Playing ${song}.`)],
+//     });
+//   };
+
+export const setPlaylist: TCommand =
   (bot: IBot) =>
   async (msg: Message, args: string[]): Promise<void> => {
     requirePermission(EPermission.ModCommands)(
       await derivePermission(bot, msg)
     );
 
-    const song = args.join(" ");
-    await setStreamSong(song)(bot.streamManager);
+    const url = args.join(" ");
+    if (
+      url == "" ||
+      !/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(
+        url
+      )
+    ) {
+      throwErr(
+        `usage: ${bot.config.prefix}setPlaylist <url to json file with http:// or https://>`
+      );
+    }
+
+    const json = await getJson(url);
+    if (!json["schedule"]) {
+      return throwErr(
+        `invalid JSON format, must be \`{ schedule: [ { startTime: "hh:hh", song: "http://<url-to-song>.mp3" }, ... ] }\` with times in UTC.`
+      );
+    }
+
+    json["schedule"].forEach((item: any) => {
+      if (!item["startTime"] || !item["song"])
+        return throwErr(
+          `invalid JSON format, must be \`{ schedule: [ { startTime: "hh:hh", song: "http://<url-to-song>.mp3" }, ... ] }\` with times in UTC.`
+        );
+    });
+
+    if (!msg.guildId) return throwErr("issue");
+    const server = await service.getServerByGuildId(bot.db)(msg.guildId);
+    const playlist = {
+      updatedAt: new Date(),
+      updatedBy: msg.author.id,
+      serverId: server.id,
+      guildId: server.guildId,
+      playlist: JSON.stringify(json),
+    };
+
+    let id = "";
+
+    try {
+      const p = await service.getServerPlaylistByGuildId(bot.db)(
+        server.guildId
+      );
+
+      id = p.id;
+    } catch (_) {}
+
+    if (!id) await service.insertServerPlaylist(bot.db)(playlist);
+    else
+      await service.updateServerPlaylist(bot.db)({
+        id,
+        ...playlist,
+      });
 
     msg.reply({
-      embeds: [genericMessage("Success!", `Playing ${song}.`)],
+      embeds: [
+        genericMessage("Yay!", `Successfully updated playlist for server.`),
+      ],
     });
   };

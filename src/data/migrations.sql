@@ -24,3 +24,13 @@ CREATE TABLE IF NOT EXISTS server_permission_roles (
 	permission_level INTEGER,
 	FOREIGN KEY(server_id) REFERENCES servers(id)
 );
+
+CREATE TABLE IF NOT EXISTS server_playlists (
+	id VARCHAR(500) PRIMARY KEY,
+	updated_at INTEGER,
+	updated_by VARCHAR(500),
+	server_id VARCHAR(500),
+	guild_id VARCHAR(500),
+	playlist TEXT,
+	FOREIGN KEY(server_id) REFERENCES servers(id)
+);

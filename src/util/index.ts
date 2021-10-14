@@ -1,4 +1,11 @@
+import crypto from "crypto";
+import { TextEncoder } from "util";
+
 import { Collection } from "discord.js";
+import { createReadStream } from "fs";
+import got from "got/dist/source";
+import { Readable } from "stream";
+import axios from "axios";
 
 /**
  * Utility function for throwing an error.
@@ -33,3 +40,24 @@ export const collectionToArray = <K, V>(
 
 	return array;
 };
+
+/**
+ * Computes a sha256 hash of the provided `message`.
+ */
+export const sha256 = async (message: string) =>
+	crypto.createHash("sha256").update(message).digest("hex");
+
+/**
+ * Returns a stream from either a file or a URL.
+ */
+export const universalStream = async (path: string): Promise<Readable> => {
+	if (!path.includes("http")) return createReadStream(path);
+
+	return got.stream(path);
+};
+
+/**
+ * Gets a JSON file by URL.
+ */
+export const getJson = async (url: string): Promise<any> =>
+	(await axios.get(url)).data;
