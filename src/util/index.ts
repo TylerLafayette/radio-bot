@@ -51,7 +51,7 @@ export const sha256 = async (message: string) =>
  * Returns a stream from either a file or a URL.
  */
 export const universalStream = async (path: string): Promise<Readable> => {
-	if (!path.includes("http")) return createReadStream(path);
+	if (!path.includes("http")) throwErr(`local files are not allowed`); // return createReadStream(path);
 
 	return got.stream(path);
 };
