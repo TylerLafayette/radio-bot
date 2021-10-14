@@ -13,7 +13,7 @@ export const newSinkPool: () => TSinkPool = newPool;
  */
 export const getSink: (
 	key: string
-) => (pool: TSinkPool) => Promise<Readable & Writable> = getFromPool;
+) => (pool: TSinkPool) => Promise<(Readable & Writable) | null> = getFromPool;
 
 /**
  * Puts a sink into the pool by `sinkId`.

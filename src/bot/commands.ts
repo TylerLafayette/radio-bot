@@ -243,7 +243,7 @@ export const leaveVc: TCommand =
     let stream = await getSink(server.id)(bot.sinkPool);
     if (stream != null) {
       stream.destroy();
-      await putSink(server.id, null)(bot.sinkPool);
+      // await putSink(server.id, null)(bot.sinkPool);
     }
 
     msg.reply({

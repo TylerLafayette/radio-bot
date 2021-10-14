@@ -8,6 +8,7 @@ import {
 	startStreaming,
 	subscribe,
 	loadPlaylist,
+	newSinkPool,
 } from "./radio";
 import { PassThrough } from "stream";
 import { stdout } from "process";
@@ -19,8 +20,9 @@ const run = async (): Promise<void> => {
 	const db = await createConnection(config.dbFilename);
 	await runMigrations(db);
 	const streamPool = newStreamPool();
+	const sinkPool = newSinkPool();
 
-	await bot.run(config, db, streamPool);
+	await bot.run(config, db, streamPool, sinkPool);
 };
 
 run();

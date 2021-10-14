@@ -13,7 +13,7 @@ export const newStreamPool: () => TStreamPool = newPool;
  */
 export const getStream: (
 	key: string
-) => (pool: TStreamPool) => Promise<TStreamManager> = getFromPool;
+) => (pool: TStreamPool) => Promise<TStreamManager | null> = getFromPool;
 
 /**
  * Puts a stream into the pool by `serverId`.
